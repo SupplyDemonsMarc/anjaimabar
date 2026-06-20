@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Absensi Sekolah</title>
+<meta name="description" content="Aplikasi absensi sekolah digital dengan panel admin">
+<meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ SPLASH / HEADER (dinamis dari setting) ============ -->
+<div id="app">
+
+  <!-- ===================== LOGIN ADMIN ===================== -->
+  <section id="view-login" class="view active">
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo" id="loginLogoBox">
+          <img id="loginLogoImg" src="" alt="Logo Sekolah" class="hidden">
+          <div id="loginLogoFallback" class="logo-fallback">🎓</div>
+        </div>
+        <h1 id="loginSchoolName" class="login-school-name">Nama Sekolah</h1>
+        <p class="login-sub">Sistem Absensi Digital</p>
+
+        <div class="login-tabs">
+          <button class="tab-btn active" data-tab="admin">Login Admin</button>
+          <button class="tab-btn" data-tab="absen">Absensi Siswa</button>
+        </div>
+
+        <!-- Form login admin -->
+        <form id="formLoginAdmin" class="tab-pane active" data-pane="admin">
+          <div class="field">
+            <label>Username</label>
+            <input type="text" id="adminUser" placeholder="Masukkan username" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="adminPass" placeholder="Masukkan password" autocomplete="current-password" required>
+          </div>
+          <p id="loginError" class="error-msg hidden">Username atau password salah.</p>
+          <button type="submit" class="btn btn-primary btn-block">Masuk sebagai Admin</button>
+          <p class="hint">Default: <b>admin</b> / <b>admin123</b></p>
+        </form>
+
+        <!-- Panel absensi cepat siswa -->
+        <div class="tab-pane" data-pane="absen">
+          <div class="field">
+            <label>Pilih Nama Siswa</label>
+            <select id="absenSiswaSelect"></select>
+          </div>
+          <div class="field">
+            <label>Status Kehadiran</label>
+            <div class="status-grid">
+              <button type="button" class="status-pick" data-status="Hadir">✅ Hadir</button>
+              <button type="button" class="status-pick" data-status="Izin">📩 Izin</button>
+              <button type="button" class="status-pick" data-status="Sakit">🤒 Sakit</button>
+              <button type="button" class="status-pick" data-status="Alpha">❌ Alpha</button>
+            </div>
+          </div>
+          <p id="absenMsg" class="success-msg hidden"></p>
+        </div>
+      </div>
+      <p class="footer-note">Dibuat untuk kebutuhan sekolah · v1.0</p>
+    </div>
+  </section>
+
+  <!-- ===================== DASHBOARD ADMIN ===================== -->
+  <section id="view-dashboard" class="view">
+    <div class="app-shell">
+
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand-logo" id="sideLogoBox">
+            <img id="sideLogoImg" src="" alt="" class="hidden">
+            <span id="sideLogoFallback">🎓</span>
+          </div>
+          <div>
+            <p class="brand-name" id="sideSchoolName">Nama Sekolah</p>
+            <p class="brand-tag">Admin Panel</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-btn active" data-page="page-ringkasan">📊 Ringkasan</button>
+          <button class="nav-btn" data-page="page-absensi">📝 Input Absensi</button>
+          <button class="nav-btn" data-page="page-rekap">📅 Rekap Absensi</button>
+          <button class="nav-btn" data-page="page-siswa">👥 Data Siswa</button>
+          <button class="nav-btn" data-page="page-pengaturan">⚙️ Pengaturan</button>
+        </nav>
+        <button id="btnLogout" class="btn btn-ghost btn-block">🚪 Keluar</button>
+      </aside>
+
+      <!-- Overlay untuk mobile -->
+      <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+      <!-- Main content -->
+      <main class="main">
+        <header class="topbar">
+          <button id="btnMenu" class="icon-btn" aria-label="Menu">☰</button>
+          <h2 id="pageTitle">Ringkasan</h2>
+          <div class="topbar-date" id="topbarDate"></div>
+        </header>
+
+        <!-- ---------- PAGE: RINGKASAN ---------- -->
+        <div id="page-ringkasan" class="page active">
+          <div class="stat-grid">
+            <div class="stat-card stat-blue">
+              <p class="stat-label">Total Siswa</p>
+              <p class="stat-value" id="statTotalSiswa">0</p>
+            </div>
+            <div class="stat-card stat-green">
+              <p class="stat-label">Hadir Hari Ini</p>
+              <p class="stat-value" id="statHadir">0</p>
+            </div>
+            <div class="stat-card stat-amber">
+              <p class="stat-label">Izin / Sakit</p>
+              <p class="stat-value" id="statIzinSakit">0</p>
+            </div>
+            <div class="stat-card stat-red">
+              <p class="stat-label">Alpha</p>
+              <p class="stat-value" id="statAlpha">0</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Absensi Hari Ini</h3>
+              <span class="badge" id="todayDateBadge"></span>
+            </div>
+            <div class="table-wrap">
+              <table id="tableHariIni">
+                <thead><tr><th>Nama</th><th>Kelas</th><th>Status</th><th>Waktu</th></tr></thead>
+                <tbody></tbody>
+              </table>
+              <p id="emptyHariIni" class="empty-state hidden">Belum ada data absensi hari ini.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---------- PAGE: INPUT ABSENSI ---------- -->
+        <div id="page-absensi" class="page">
+          <div class="card">
+            <div class="card-head">
+              <h3>Input Absensi Massal</h3>
+              <input type="date" id="absensiTanggal">
+            </div>
+            <p class="card-desc">Pilih kelas, lalu tandai status setiap siswa untuk tanggal yang dipilih.</p>
+            <div class="field" style="max-width:260px">
+              <label>Filter Kelas</label>
+              <select id="filterKelasAbsensi"></select>
+            </div>
+            <div class="table-wrap">
+              <table id="tableInputAbsensi">
+                <thead><tr><th>Nama</th><th>Kelas</th><th>Hadir</th><th>Izin</th><th>Sakit</th><th>Alpha</th></tr></thead>
+                <tbody></tbody>
+              </table>
+              <p id="emptySiswaAbsensi" class="empty-state hidden">Belum ada data siswa. Tambahkan di menu "Data Siswa".</p>
+            </div>
+            <button id="btnSimpanAbsensi" class="btn btn-primary">💾 Simpan Absensi</button>
+            <p id="simpanMsg" class="success-msg hidden"></p>
+          </div>
+        </div>
+
+        <!-- ---------- PAGE: REKAP ---------- -->
+        <div id="page-rekap" class="page">
+          <div class="card">
+            <div class="card-head">
+              <h3>Rekap Absensi</h3>
+            </div>
+            <div class="filter-row">
+              <div class="field">
+                <label>Dari Tanggal</label>
+                <input type="date" id="rekapDari">
+              </div>
+              <div class="field">
+                <label>Sampai Tanggal</label>
+                <input type="date" id="rekapSampai">
+              </div>
+              <div class="field">
+                <label>Kelas</label>
+                <select id="rekapKelas"></select>
+              </div>
+              <div class="field">
+                <label>&nbsp;</label>
+                <button id="btnFilterRekap" class="btn btn-secondary">🔍 Tampilkan</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table id="tableRekap">
+                <thead><tr><th>Tanggal</th><th>Nama</th><th>Kelas</th><th>Status</th></tr></thead>
+                <tbody></tbody>
+              </table>
+              <p id="emptyRekap" class="empty-state hidden">Tidak ada data pada rentang ini.</p>
+            </div>
+            <button id="btnExportRekap" class="btn btn-secondary">⬇️ Export CSV</button>
+          </div>
+        </div>
+
+        <!-- ---------- PAGE: DATA SISWA ---------- -->
+        <div id="page-siswa" class="page">
+          <div class="card">
+            <div class="card-head">
+              <h3>Tambah Siswa</h3>
+            </div>
+            <form id="formSiswa" class="form-row">
+              <div class="field">
+                <label>Nama Lengkap</label>
+                <input type="text" id="inputNamaSiswa" placeholder="Nama siswa" required>
+              </div>
+              <div class="field">
+                <label>Kelas</label>
+                <input type="text" id="inputKelasSiswa" placeholder="Contoh: 7A" required>
+              </div>
+              <div class="field">
+                <label>NIS</label>
+                <input type="text" id="inputNisSiswa" placeholder="Nomor induk (opsional)">
+              </div>
+              <div class="field field-btn">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-primary">➕ Tambah</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Daftar Siswa</h3>
+              <input type="text" id="searchSiswa" placeholder="Cari nama siswa...">
+            </div>
+            <div class="table-wrap">
+              <table id="tableSiswa">
+                <thead><tr><th>Nama</th><th>Kelas</th><th>NIS</th><th></th></tr></thead>
+                <tbody></tbody>
+              </table>
+              <p id="emptySiswa" class="empty-state hidden">Belum ada siswa terdaftar.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---------- PAGE: PENGATURAN ---------- -->
+        <div id="page-pengaturan" class="page">
+          <div class="card">
+            <div class="card-head"><h3>Identitas Sekolah</h3></div>
+            <p class="card-desc">Pengaturan ini akan tampil di halaman login dan sidebar admin.</p>
+
+            <div class="settings-grid">
+              <div class="logo-uploader">
+                <div class="logo-preview" id="settingLogoPreview">
+                  <img id="settingLogoImg" src="" alt="" class="hidden">
+                  <span id="settingLogoFallback">🎓</span>
+                </div>
+                <input type="file" id="inputLogo" accept="image/*" class="hidden">
+                <button type="button" id="btnPilihLogo" class="btn btn-secondary btn-sm">🖼️ Pilih Logo</button>
+                <button type="button" id="btnHapusLogo" class="btn btn-ghost btn-sm">Hapus Logo</button>
+              </div>
+
+              <div class="settings-fields">
+                <div class="field">
+                  <label>Nama Sekolah</label>
+                  <input type="text" id="inputNamaSekolah" placeholder="Contoh: SD Negeri 1 Harapan">
+                </div>
+                <div class="field">
+                  <label>Alamat Sekolah</label>
+                  <input type="text" id="inputAlamatSekolah" placeholder="Alamat sekolah (opsional)">
+                </div>
+                <div class="field">
+                  <label>Warna Tema</label>
+                  <div class="color-picker-row">
+                    <input type="color" id="inputWarnaTema" value="#2563eb">
+                    <span class="color-hint">Pilih warna utama aplikasi</span>
+                  </div>
+                </div>
+                <button id="btnSimpanSetting" class="btn btn-primary">💾 Simpan Pengaturan</button>
+                <p id="settingMsg" class="success-msg hidden"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Ubah Password Admin</h3></div>
+            <form id="formPassword" class="form-row">
+              <div class="field">
+                <label>Username Baru</label>
+                <input type="text" id="newUsername" placeholder="Kosongkan jika tidak diubah">
+              </div>
+              <div class="field">
+                <label>Password Baru</label>
+                <input type="password" id="newPassword" placeholder="Kosongkan jika tidak diubah">
+              </div>
+              <div class="field field-btn">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-secondary">🔒 Update</button>
+              </div>
+            </form>
+            <p id="passwordMsg" class="success-msg hidden"></p>
+          </div>
+
+          <div class="card card-danger">
+            <div class="card-head"><h3>Reset Data</h3></div>
+            <p class="card-desc">Menghapus seluruh data siswa &amp; absensi secara permanen. Tindakan ini tidak dapat dibatalkan.</p>
+            <button id="btnResetData" class="btn btn-danger">🗑️ Reset Semua Data</button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </section>
+
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    });
+  }
+</script>
+</body>
+</html>
